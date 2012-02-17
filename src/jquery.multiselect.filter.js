@@ -104,53 +104,35 @@
 		
 		// thx for the logic here ben alman
 		_handler: function( e ){
-			var previousTerm = $(this.input[0]).data('previous');
-			
-			var term = $.trim( this.input[0].value.toLowerCase() ),
-				self = this,
-				// speed up lookups
-				rows = this.rows, inputs = this.inputs, cache = this.cache;
-			
-			$(this.input[0]).data('previous', term);
+			var input = this.input[0],
+				previousTerm = $(input).data('previous'),
+				term = $.trim( input.value.toLowerCase() ),
+				instance = this.instance,
+				$checkboxContainer = instance.checkboxContainer,
+				$select = instance.element;
 
+			$(input).data('previous', term);
 			if (term !== previousTerm) {
-				this.instance.checkboxContainer.scrollTop(0);
+				$checkboxContainer.scrollTop(0);
 			} else {
 				return;
 			}
 			
-			this.instance.checkboxContainer.empty();
+			$checkboxContainer.empty();
 			if( !term ){
-				if (this.instance.checkboxContainer.children().size() === 0) {
-					this.instance.checkboxContainer.append(rows);
-					$(self.instance.element).data('currentChunk', 0);
-				}
-				$(self.instance.element).data('filtered', null);
-
+				this._rollback(instance);
 			} else {
-				var $allItems = $( $(self.instance.element).data('allItems').join('') );
-				var filtered = [];
-				$(self.instance.element).data('filtered', filtered);
-				
-				var regex = new RegExp(term.replace(rEscape, "\\$&"), 'gi');
-				
-				this._trigger( "filter", e, $.map(cache, function(v, i){
-					if( v.search(regex) !== -1 ){
-						filtered.push( $allItems.eq(i).wrap().html() );
-						return inputs.get(i);
-					}
-					return null;
-				}));
-				
-				$(self.instance.element).data('currentChunk', 0);
-				$(filtered.slice(0, self.instance.options.chunkSize).join(''))
-					.appendTo(this.instance.checkboxContainer);
+				var $filtered = this._filter($select, term, e);
+				var $filteredChunk = $filtered.slice(0, instance.options.chunkSize);
+				$select.data('filtered', $filtered);
+				$select.data('currentChunk', 0);
+				$checkboxContainer.append($filteredChunk);
 			}
-			this.instance.labels = this.instance.menu.find('label');
-			this.instance.inputs = this.instance.labels.children('input');
+			instance.labels = instance.menu.find('label');
+			instance.inputs = instance.labels.children('input');
 
 			// show/hide optgroups
-			this.instance.menu.find(".ui-multiselect-optgroup-label").each(function(){
+			instance.menu.find(".ui-multiselect-optgroup-label").each(function(){
 				var $this = $(this);
 				var isVisible = $this.nextUntil('.ui-multiselect-optgroup-label').filter(function(){
 				  return $.css(this, "display") !== 'none';
@@ -158,6 +140,38 @@
 				
 				$this[ isVisible ? 'show' : 'hide' ]();
 			});
+		},
+
+		_rollback: function(instance) {
+			var $checkboxContainer = instance.checkboxContainer, 
+				$select = instance.element,
+				$allItems = $select.data('allItems'),
+				chunkSize = instance.options.chunkSize;
+
+			if ($checkboxContainer.children().size() === 0) {
+				$checkboxContainer.append($allItems.slice(0, chunkSize));
+				$select.data('currentChunk', 0);
+			}
+
+			$select.data('filtered', null);	
+		},
+
+		_filter: function ($select, term, e) {
+			var $filtered = $(),
+				$allItems = $select.data('allItems'),
+			    regex = new RegExp(term.replace(rEscape, "\\$&"), 'gi'),
+			    cache = this.cache,
+			    inputs = this.inputs;
+
+			this._trigger( "filter", e, $.map(cache, function(v, i){
+				if( v.search(regex) !== -1 ){
+					$filtered = $filtered.add( $allItems.eq(i) );
+					return inputs.get(i);
+				}
+				return null;
+			}));
+
+			return $filtered;
 		},
 
 		_reset: function() {

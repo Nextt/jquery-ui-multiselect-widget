@@ -122,11 +122,9 @@ $.widget("ech.multiselect", {
 			menu = this.menu,
 			checkboxContainer = this.checkboxContainer,
 			optgroups = [],
-			html = "",
 			id = el.attr('id') || multiselectID++, // unique ID for the label & option tags
-			allItems = [];
+			allItems = $();
 
-		$(el).data('allItems', allItems);
 		$(el).data('currentChunk', 0);
 
 		// build items
@@ -140,9 +138,10 @@ $.widget("ech.multiselect", {
 				isDisabled = this.disabled,
 				isSelected = this.selected,
 				labelClasses = [ 'ui-corner-all' ],
+				currentItem,
 				optLabel;
 
-			allItems[i] = '';
+			currentItem = '';
 
 			// is this an optgroup?
 			if( parent.tagName === 'OPTGROUP' ){
@@ -150,7 +149,7 @@ $.widget("ech.multiselect", {
 				
 				// has this optgroup been added already?
 				if( $.inArray(optLabel, optgroups) === -1 ){
-					allItems[i] += '<li class="ui-multiselect-optgroup-label"><a href="#">' + optLabel + '</a></li>';
+					currentItem += '<li class="ui-multiselect-optgroup-label"><a href="#">' + optLabel + '</a></li>';
 					optgroups.push( optLabel );
 				}
 			}
@@ -166,30 +165,34 @@ $.widget("ech.multiselect", {
 				labelClasses.push( 'ui-state-active' );
 			}
 			
-			allItems[i] += '<li class="' + (isDisabled ? 'ui-multiselect-disabled' : '') + '">';
+			currentItem += '<li class="' + (isDisabled ? 'ui-multiselect-disabled' : '') + '">';
 			
 			// create the label
-			allItems[i] += '<label for="' + inputID + '" title="' + description + '" class="' + labelClasses.join(' ') + '">';
-			allItems[i] += '<input id="' + inputID + '" name="multiselect_' + id + '" type="' + (o.multiple ? "checkbox" : "radio") + '" value="' + value + '" title="' + title + '"';
+			currentItem += '<label for="' + inputID + '" title="' + description + '" class="' + labelClasses.join(' ') + '">';
+			currentItem += '<input id="' + inputID + '" name="multiselect_' + id + '" type="' + (o.multiple ? "checkbox" : "radio") + '" value="' + value + '" title="' + title + '"';
 
 			// pre-selected?
 			if( isSelected ){
-				allItems[i] += ' checked="checked"';
-				allItems[i] += ' aria-selected="true"';
+				currentItem += ' checked="checked"';
+				currentItem += ' aria-selected="true"';
 			}
 
 			// disabled?
 			if( isDisabled ){
-				allItems[i] += ' disabled="disabled"';
-				allItems[i] += ' aria-disabled="true"';
+				currentItem += ' disabled="disabled"';
+				currentItem += ' aria-disabled="true"';
 			}
 
 			// add the title and close everything off
-			allItems[i] += ' /><span>' + title + '</span></label></li>';
+			currentItem += ' /><span>' + title + '</span></label></li>';
+			allItems = allItems.add(currentItem);
 		});
+
+		// caching wrapped items
+		$(el).data('allItems', allItems);
 		
 		// insert into the DOM
-		checkboxContainer.html( $(allItems.slice(0, this.options.chunkSize).join('')) );
+		checkboxContainer.append( allItems.slice(0, this.options.chunkSize) );
 
 		// cache some moar useful elements
 		this.labels = menu.find('label');
@@ -212,7 +215,7 @@ $.widget("ech.multiselect", {
 	update: function(){
 		var o = this.options,
 			$inputs = this.inputs,
-			$checked = $inputs.filter('[checked]'),
+			$checked = $inputs.filter(':checked'),
 			numChecked = $checked.length,
 			value;
 		
@@ -237,19 +240,18 @@ $.widget("ech.multiselect", {
 		var self = this, button = this.button;
 
 		$(this.checkboxContainer).scroll(function(e) {
-			var currentChunk = $(self.element).data('currentChunk');
-			var filtered = $(self.element).data('filtered');
-			var items = filtered ? filtered : $(self.element).data('allItems');
-			
 			var distanceFromBottom = this.scrollHeight - this.scrollTop;
 			if (distanceFromBottom <= 500) {
-				currentChunk++;
-				$(self.element).data('currentChunk', currentChunk);
+				var currentChunk = $(self.element).data('currentChunk');
+				var filtered = $(self.element).data('filtered');
+				var items = filtered ? filtered : $(self.element).data('allItems');
+				
+				$(self.element).data('currentChunk', ++currentChunk);
 
 				var start = currentChunk * self.options.chunkSize;
 				var end = (currentChunk + 1) * self.options.chunkSize;
 
-				$(this).append(items.slice(start, end).join(''));
+				$(this).append( items.slice(start, end) );
 				self.labels = self.menu.find('label');
 				self.inputs = self.labels.children('input');
 			}
