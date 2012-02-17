@@ -1,0 +1,36 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="./ui-lightness/jquery-ui-1.8.17.custom.css" />
+    <link rel="stylesheet" type="text/css" href="../jquery.multiselect.css" />
+    <link rel="stylesheet" type="text/css" href="../jquery.multiselect.filter.css" />
+    <link rel="stylesheet" type="text/css" href="../demos/assets/style.css" />
+    <link rel="stylesheet" type="text/css" href="../demos/assets/prettify.css" />
+
+    <script type="text/javascript" src="./jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="./jquery-ui-1.8.17.custom.min.js"></script>
+    <script type="text/javascript" src="../src/jquery.multiselect.js"></script>
+    <script type="text/javascript" src="../src/jquery.multiselect.filter.js"></script>
+
+    <script type="text/javascript" src="../demos/assets/prettify.js"></script>
+
+    <script type="text/javascript">
+        $(function() {
+
+            $('select').each(function () {
+                var options = "<option value='0'>0</option>";
+                for (var i = 1; i < 4000; i++) {
+                    options += "<option value='" + i + "'>" + i + "</option>";
+                }
+                $(this).append($(options));
+            });
+            $("select").multiselect().multiselectfilter();
+        });
+    </script>
+</head>
+<body>
+    <select id="s1" /></select>
+    <select id="s2" /></select>
+    <select id="s3" /></select>
+    <select id="s4" /></select>
+</body>
+</html>

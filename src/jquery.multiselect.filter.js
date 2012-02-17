@@ -104,27 +104,50 @@
 		
 		// thx for the logic here ben alman
 		_handler: function( e ){
-			var term = $.trim( this.input[0].value.toLowerCase() ),
+			var previousTerm = $(this.input[0]).data('previous');
 			
+			var term = $.trim( this.input[0].value.toLowerCase() ),
+				self = this,
 				// speed up lookups
 				rows = this.rows, inputs = this.inputs, cache = this.cache;
 			
-			if( !term ){
-				rows.show();
+			$(this.input[0]).data('previous', term);
+
+			if (term !== previousTerm) {
+				this.instance.checkboxContainer.scrollTop(0);
 			} else {
-				rows.hide();
+				return;
+			}
+			
+			this.instance.checkboxContainer.empty();
+			if( !term ){
+				if (this.instance.checkboxContainer.children().size() === 0) {
+					this.instance.checkboxContainer.append(rows);
+					$(self.instance.element).data('currentChunk', 0);
+				}
+				$(self.instance.element).data('filtered', null);
+
+			} else {
+				var $allItems = $( $(self.instance.element).data('allItems').join('') );
+				var filtered = [];
+				$(self.instance.element).data('filtered', filtered);
 				
 				var regex = new RegExp(term.replace(rEscape, "\\$&"), 'gi');
 				
 				this._trigger( "filter", e, $.map(cache, function(v, i){
 					if( v.search(regex) !== -1 ){
-						rows.eq(i).show();
+						filtered.push( $allItems.eq(i).wrap().html() );
 						return inputs.get(i);
 					}
-					
 					return null;
 				}));
+				
+				$(self.instance.element).data('currentChunk', 0);
+				$(filtered.slice(0, self.instance.options.chunkSize).join(''))
+					.appendTo(this.instance.checkboxContainer);
 			}
+			this.instance.labels = this.instance.menu.find('label');
+			this.instance.inputs = this.instance.labels.children('input');
 
 			// show/hide optgroups
 			this.instance.menu.find(".ui-multiselect-optgroup-label").each(function(){
@@ -144,7 +167,7 @@
 		updateCache: function(){
 			// each list item
 			this.rows = this.instance.menu.find(".ui-multiselect-checkboxes li:not(.ui-multiselect-optgroup-label)");
-			
+
 			// cache
 			this.cache = this.element.children().map(function(){
 				var self = $(this);

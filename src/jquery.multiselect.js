@@ -39,7 +39,9 @@ $.widget("ech.multiselect", {
 		hide: '',
 		autoOpen: false,
 		multiple: true,
-		position: {}
+		position: {},
+		chunkSize: 100
+
 	},
 
 	_create: function(){
@@ -92,7 +94,7 @@ $.widget("ech.multiselect", {
 		
 		// build menu
 		this.refresh( true );
-		
+
 		// some addl. logic for single selects
 		if( !o.multiple ){
 			menu.addClass('ui-multiselect-single');
@@ -113,7 +115,7 @@ $.widget("ech.multiselect", {
 			this.disable();
 		}
 	},
-	
+
 	refresh: function( init ){
 		var el = this.element,
 			o = this.options,
@@ -121,8 +123,12 @@ $.widget("ech.multiselect", {
 			checkboxContainer = this.checkboxContainer,
 			optgroups = [],
 			html = "",
-			id = el.attr('id') || multiselectID++; // unique ID for the label & option tags
-		
+			id = el.attr('id') || multiselectID++, // unique ID for the label & option tags
+			allItems = [];
+
+		$(el).data('allItems', allItems);
+		$(el).data('currentChunk', 0);
+
 		// build items
 		el.find('option').each(function( i ){
 			var $this = $(this), 
@@ -135,14 +141,16 @@ $.widget("ech.multiselect", {
 				isSelected = this.selected,
 				labelClasses = [ 'ui-corner-all' ],
 				optLabel;
-			
+
+			allItems[i] = '';
+
 			// is this an optgroup?
 			if( parent.tagName === 'OPTGROUP' ){
 				optLabel = parent.getAttribute( 'label' );
 				
 				// has this optgroup been added already?
 				if( $.inArray(optLabel, optgroups) === -1 ){
-					html += '<li class="ui-multiselect-optgroup-label"><a href="#">' + optLabel + '</a></li>';
+					allItems[i] += '<li class="ui-multiselect-optgroup-label"><a href="#">' + optLabel + '</a></li>';
 					optgroups.push( optLabel );
 				}
 			}
@@ -151,36 +159,37 @@ $.widget("ech.multiselect", {
 				labelClasses.push( 'ui-state-disabled' );
 			}
 
+
 			// browsers automatically select the first option
 			// by default with single selects
 			if( isSelected && !o.multiple ){
 				labelClasses.push( 'ui-state-active' );
 			}
 			
-			html += '<li class="' + (isDisabled ? 'ui-multiselect-disabled' : '') + '">';
+			allItems[i] += '<li class="' + (isDisabled ? 'ui-multiselect-disabled' : '') + '">';
 			
 			// create the label
-			html += '<label for="' + inputID + '" title="' + description + '" class="' + labelClasses.join(' ') + '">';
-			html += '<input id="' + inputID + '" name="multiselect_' + id + '" type="' + (o.multiple ? "checkbox" : "radio") + '" value="' + value + '" title="' + title + '"';
+			allItems[i] += '<label for="' + inputID + '" title="' + description + '" class="' + labelClasses.join(' ') + '">';
+			allItems[i] += '<input id="' + inputID + '" name="multiselect_' + id + '" type="' + (o.multiple ? "checkbox" : "radio") + '" value="' + value + '" title="' + title + '"';
 
 			// pre-selected?
 			if( isSelected ){
-				html += ' checked="checked"';
-				html += ' aria-selected="true"';
+				allItems[i] += ' checked="checked"';
+				allItems[i] += ' aria-selected="true"';
 			}
 
 			// disabled?
 			if( isDisabled ){
-				html += ' disabled="disabled"';
-				html += ' aria-disabled="true"';
+				allItems[i] += ' disabled="disabled"';
+				allItems[i] += ' aria-disabled="true"';
 			}
 
 			// add the title and close everything off
-			html += ' /><span>' + title + '</span></label></li>';
+			allItems[i] += ' /><span>' + title + '</span></label></li>';
 		});
 		
 		// insert into the DOM
-		checkboxContainer.html( html );
+		checkboxContainer.html( $(allItems.slice(0, this.options.chunkSize).join('')) );
 
 		// cache some moar useful elements
 		this.labels = menu.find('label');
@@ -226,6 +235,26 @@ $.widget("ech.multiselect", {
 	// binds events
 	_bindEvents: function(){
 		var self = this, button = this.button;
+
+		$(this.checkboxContainer).scroll(function(e) {
+			var currentChunk = $(self.element).data('currentChunk');
+			var filtered = $(self.element).data('filtered');
+			var items = filtered ? filtered : $(self.element).data('allItems');
+			
+			var distanceFromBottom = this.scrollHeight - this.scrollTop;
+			if (distanceFromBottom <= 500) {
+				currentChunk++;
+				$(self.element).data('currentChunk', currentChunk);
+
+				var start = currentChunk * self.options.chunkSize;
+				var end = (currentChunk + 1) * self.options.chunkSize;
+
+				$(this).append(items.slice(start, end).join(''));
+				self.labels = self.menu.find('label');
+				self.inputs = self.labels.children('input');
+			}
+		});
+
 		
 		function clickHandler(){
 			self[ self._isOpen ? 'close' : 'open' ]();
