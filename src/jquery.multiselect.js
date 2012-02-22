@@ -214,7 +214,9 @@ $.widget("ech.multiselect", {
 	// updates the button text. call refresh() to rebuild
 	update: function(){
 		var o = this.options,
-			$inputs = this.inputs,
+			$allItems = $(this.element).data('allItems'),
+			$inputs = $allItems.find('input'),
+			// $inputs = this.inputs,
 			$checked = $inputs.filter(':checked'),
 			numChecked = $checked.length,
 			value;
