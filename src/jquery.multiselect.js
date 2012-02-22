@@ -123,7 +123,7 @@ $.widget("ech.multiselect", {
 			checkboxContainer = this.checkboxContainer,
 			optgroups = [],
 			id = el.attr('id') || multiselectID++, // unique ID for the label & option tags
-			allItems = $();
+			allItems = '';
 
 		$(el).data('currentChunk', 0);
 
@@ -185,14 +185,16 @@ $.widget("ech.multiselect", {
 
 			// add the title and close everything off
 			currentItem += ' /><span>' + title + '</span></label></li>';
-			allItems = allItems.add(currentItem);
+			allItems += currentItem;
 		});
 
+		var $allItems = $(allItems);
+
 		// caching wrapped items
-		$(el).data('allItems', allItems);
+		$(el).data( 'allItems', $allItems );
 		
 		// insert into the DOM
-		checkboxContainer.append( allItems.slice(0, this.options.chunkSize) );
+		checkboxContainer.append( $allItems.slice(0, this.options.chunkSize) );
 
 		// cache some moar useful elements
 		this.labels = menu.find('label');
