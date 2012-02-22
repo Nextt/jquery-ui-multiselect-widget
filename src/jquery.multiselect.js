@@ -192,12 +192,13 @@ $.widget("ech.multiselect", {
 
 		// caching wrapped items
 		$(el).data( 'allItems', $allItems );
+		$(el).data( 'allInputs', $allItems.find('input') );
 		
 		// insert into the DOM
 		checkboxContainer.append( $allItems.slice(0, this.options.chunkSize) );
 
 		// cache some moar useful elements
-		this.labels = menu.find('label');
+		this.labels = $allItems.find('label');
 		this.inputs = this.labels.children('input');
 		
 		// set widths
@@ -216,9 +217,7 @@ $.widget("ech.multiselect", {
 	// updates the button text. call refresh() to rebuild
 	update: function(){
 		var o = this.options,
-			$allItems = $(this.element).data('allItems'),
-			$inputs = $allItems.find('input'),
-			// $inputs = this.inputs,
+			$inputs = $(this.element).data('allInputs'),
 			$checked = $inputs.filter(':checked'),
 			numChecked = $checked.length,
 			value;

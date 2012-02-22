@@ -109,7 +109,8 @@
 				term = $.trim( input.value.toLowerCase() ),
 				instance = this.instance,
 				$checkboxContainer = instance.checkboxContainer,
-				$select = instance.element;
+				$select = instance.element,
+				$allItems = $select.data('allItems');
 
 			$(input).data('previous', term);
 			if (term !== previousTerm) {
@@ -120,9 +121,9 @@
 			
 			$checkboxContainer.empty();
 			if( !term ){
-				this._rollback(instance);
+				this._rollback(instance, $allItems);
 			} else {
-				var $filtered = this._filter($select, term, e);
+				var $filtered = this._filter($select, term, e, $allItems);
 				var $filteredChunk = $filtered.slice(0, instance.options.chunkSize);
 				$select.data('filtered', $filtered);
 				$select.data('currentChunk', 0);
@@ -142,10 +143,9 @@
 			});
 		},
 
-		_rollback: function(instance) {
+		_rollback: function(instance, $allItems) {
 			var $checkboxContainer = instance.checkboxContainer, 
 				$select = instance.element,
-				$allItems = $select.data('allItems'),
 				chunkSize = instance.options.chunkSize;
 
 			if ($checkboxContainer.children().size() === 0) {
@@ -156,9 +156,8 @@
 			$select.data('filtered', null);	
 		},
 
-		_filter: function ($select, term, e) {
+		_filter: function ($select, term, e, $allItems) {
 			var $filtered = $(),
-				$allItems = $select.data('allItems'),
 			    regex = new RegExp(term.replace(rEscape, "\\$&"), 'gi'),
 			    cache = this.cache,
 			    inputs = this.inputs;
